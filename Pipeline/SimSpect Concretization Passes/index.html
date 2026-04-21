@@ -1,0 +1,1293 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Leakage-inducing litmus test generation and execution pipeline for Spectre defense validation">
+      
+      
+      
+      
+        <link rel="prev" href="../../Defenses/scope/">
+      
+      
+        <link rel="next" href="../gem5/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>SimSpect Concretization Passes - SimSpect Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#211-pass-1-parse-and-extract-abstract-state" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="SimSpect Documentation" class="md-header__button md-logo" aria-label="SimSpect Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            SimSpect Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              SimSpect Concretization Passes
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="SimSpect Documentation" class="md-nav__button md-logo" aria-label="SimSpect Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    SimSpect Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Submissions%20and%20presentations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Submissions and Presentations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../simspect-master/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Simspect master
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Defenses
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Defenses
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Defenses/scope/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scope
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Pipeline
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SimSpect Concretization Passes
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SimSpect Concretization Passes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#211-pass-1-parse-and-extract-abstract-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1.1 Pass 1 — Parse and extract abstract state
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#212-pass-2-specify-concrete-instruction-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1.2 Pass 2 — Specify concrete instruction types
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#213-pass-25-annotate-branch-mispredictions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1.3 Pass 2.5 — Annotate branch mispredictions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#214-pass-3-assign-concrete-registers-and-memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1.4 Pass 3 — Assign concrete registers and memory
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.1.4 Pass 3 — Assign concrete registers and memory">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#register-assignment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Register assignment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memory-assignment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory assignment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#branch-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Branch conditions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#215-pass-4-ssa-renaming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1.5 Pass 4 — SSA renaming
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#216-pass-5-emit-llvm-ir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1.6 Pass 5 — Emit LLVM IR
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.1.6 Pass 5 — Emit LLVM IR">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entry-block-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entry block structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#per-instruction-emission" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-instruction emission
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#epilogue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Epilogue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#full-example-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Full example output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#217-side-output-branch-annotation-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1.7 Side output — Branch annotation file
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gem5/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gem5
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+  <h1>SimSpect Concretization Passes</h1>
+
+<p>All passes live in <code>alloy/parsexml.py</code>. Each pass takes the output dict of the previous pass and returns an enriched dict. Passes can optionally write a human-readable <code>.ir</code> text file (<code>write_out=True</code>, <code>out_path=...</code>). The full pipeline in order:</p>
+<pre><code>Alloy XML
+→ Pass 1   pass1_specify_state_a
+→ Pass 2   pass2_specify_instructions
+→ Pass 2.5 pass2_5_specify_branches
+→ Pass 3   pass3_assign_operands
+→ Pass 4   pass4_ssa
+→ Pass 5   pass5_emit_llvm            → LLVM IR text (.ll)
+             emit_branch_annotations  → BTB force annotations (.json)
+</code></pre>
+<hr />
+<h3 id="211-pass-1-parse-and-extract-abstract-state">2.1.1 Pass 1 — Parse and extract abstract state<a class="headerlink" href="#211-pass-1-parse-and-extract-abstract-state" title="Permanent link">&para;</a></h3>
+<p><strong>Function:</strong> <code>pass1_specify_state_a(inst, out_path, write_out)</code></p>
+<p><strong>Input:</strong> An <code>AlloyInstance</code> produced by <code>parse_alloy_xml(xml_text)</code>, which parses raw Alloy XML. The XML contains the Alloy model's solution: typed instruction atoms (<code>Load</code>, <code>Store</code>, <code>Branchn</code>, <code>Branchx</code>, <code>Othern</code>, <code>Otherx</code>), state atoms (<code>Reg_s$*</code>, <code>Mem_s$*</code>), operand atoms (<code>Inreg$*</code>, <code>Outreg$*</code>, <code>Inmem$*</code>, <code>Outmem$*</code>), and relations between them (<code>spo</code>, <code>inreg</code>, <code>outreg</code>, <code>inmem</code>, <code>outmem</code>, <code>inaddr</code>, <code>opstate</code>, <code>isresolved</code>, <code>iscommitted</code>).</p>
+<p><strong>What it does:</strong>
+1. Collects all instruction atoms across the six typed sigs.
+2. Topologically sorts them by the <code>spo</code> (speculative program order) relation to produce a linear execution order.
+3. For each instruction, maps its operand atoms (e.g. <code>Inreg$0</code>) to their physical state via the <code>opstate</code> relation. A physical state is either a <code>Reg_s$*</code> atom (register location) or a <code>Mem_s$*</code> atom (memory location). This distinction is what makes two operands "the same physical location."
+4. Populates slot records for each operand role. Every instruction has the same fixed set of roles: <code>inreg</code> (2 slots: <code>inreg0</code>, <code>inreg1</code>), <code>inaddr</code> (1 slot), <code>inmem</code> (1 slot), <code>outreg</code> (1 slot), <code>outmem</code> (1 slot). A slot is <strong>specified</strong> if the Alloy model assigned it a physical state, and <strong>nonspecified</strong> otherwise.
+5. Collects the set of unique physical register states (<code>Reg_s$*</code>) and memory states (<code>Mem_s$*</code>) used across all instructions.</p>
+<p><strong>Output dict:</strong></p>
+<pre><code class="language-python">{
+&quot;instructions&quot;: [
+{
+&quot;pc&quot;: int, # position in topological order
+&quot;instruction&quot;: str, # atom name, e.g. &quot;Load$0&quot;
+&quot;kind&quot;: str, # &quot;ld&quot; | &quot;str&quot; | &quot;br_n&quot; | &quot;br_x&quot; | &quot;other_n&quot; | &quot;other_x&quot;
+&quot;resolved&quot;: bool, # from isresolved relation
+&quot;committed&quot;: bool, # from iscommitted relation
+&quot;slots&quot;: {
+&quot;inreg&quot;: [ {slot, specified, operand_atom, physical}, ... ], # 2 entries
+&quot;inaddr&quot;: [ {slot, specified, operand_atom, physical} ], # 1 entry
+&quot;inmem&quot;: [ {slot, specified, operand_atom, physical} ], # 1 entry
+&quot;outreg&quot;: [ {slot, specified, operand_atom, physical} ], # 1 entry
+&quot;outmem&quot;: [ {slot, specified, operand_atom, physical} ] # 1 entry
+}
+}, ...
+],
+&quot;resource_usage&quot;: {
+&quot;register_count&quot;: int, # number of unique Reg_s$* atoms
+&quot;memory_count&quot;: int, # number of unique Mem_s$* atoms
+&quot;registers&quot;: [ &quot;Reg_s$0&quot;, ... ], # sorted list
+&quot;memory&quot;: [ &quot;Mem_s$0&quot;, ... ] # sorted list
+}
+}
+</code></pre>
+<p>Each slot record: <code>{"slot": str, "specified": bool, "operand_atom": str|None, "physical": str|None}</code>. <code>physical</code> is the <code>Reg_s$*</code> or <code>Mem_s$*</code> atom name, or <code>None</code> if nonspecified.</p>
+<p><strong>Key design choices:</strong>
+- Physical identity is keyed by <code>opstate</code>, not by operand atom. Two different operand atoms that share the same <code>Reg_s$*</code> via <code>opstate</code> represent the same physical register location. This is what allows later passes to enforce that they map to the same physical register.
+- <code>resolved</code> and <code>committed</code> flags are preserved through all subsequent passes — they are the primary microarchitectural metadata the pipeline is designed around.</p>
+<hr />
+<h3 id="212-pass-2-specify-concrete-instruction-types">2.1.2 Pass 2 — Specify concrete instruction types<a class="headerlink" href="#212-pass-2-specify-concrete-instruction-types" title="Permanent link">&para;</a></h3>
+<p><strong>Function:</strong> <code>pass2_specify_instructions(pass1_result, instruction_table, out_path, write_out)</code>
+<strong>Input:</strong> Pass 1 dict.
+<strong>What it does:</strong>
+Assigns a concrete LLVM-level instruction type to each abstract instruction atom. Uses a static <code>INSTRUCTION_TABLE</code> that maps four instruction categories to one or two concrete candidates each. Each candidate declares which operand slots it actually uses (<code>"uses"</code> set), using the slot names from pass 1.</p>
+<p>The instruction table (defined in <code>parsexml.py</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Concrete name</th>
+<th><code>llvm_op</code></th>
+<th><code>uses</code> (slot names)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ld</code></td>
+<td><code>load</code></td>
+<td><code>load volatile i64</code></td>
+<td><code>{inaddr, inmem, outreg}</code></td>
+</tr>
+<tr>
+<td><code>str</code></td>
+<td><code>store</code></td>
+<td><code>store volatile i64</code></td>
+<td><code>{inreg0, inaddr, outmem}</code></td>
+</tr>
+<tr>
+<td><code>br</code></td>
+<td><code>br_uncond</code></td>
+<td><code>br label</code></td>
+<td><code>{}</code></td>
+</tr>
+<tr>
+<td><code>br</code></td>
+<td><code>br_cond</code></td>
+<td><code>br i1</code></td>
+<td><code>{inreg0}</code></td>
+</tr>
+<tr>
+<td><code>other</code></td>
+<td><code>bitnot</code></td>
+<td><code>xor i64</code></td>
+<td><code>{inreg0, outreg}</code></td>
+</tr>
+<tr>
+<td><code>other</code></td>
+<td><code>add</code></td>
+<td><code>add i64</code></td>
+<td><code>{inreg0, inreg1, outreg}</code></td>
+</tr>
+</tbody>
+</table>
+<p>Kind tokens are normalized to categories first: <code>br_n</code>/<code>br_x</code> → <code>br</code>, <code>other_n</code>/<code>other_x</code> → <code>other</code>.
+NO LONGER TRUE&lt; THEY ARE SPLIT UP</p>
+<p><strong>Filtering rule:</strong> For a given abstract instruction, collect the set of slot names that are already specified (have a physical state from Alloy). Filter the category's candidates to those whose <code>uses</code> set is a <strong>superset</strong> of the specified slots — i.e. every slot the Alloy model has pinned must be consumed by the chosen instruction. Among valid candidates, choose <strong>randomly</strong> (using <code>random.choice</code>). If no candidate covers all specified slots (model/table inconsistency), fall back to all candidates.</p>
+<p>Example: <code>Otherx$0</code> with <code>inreg0</code> specified → <code>bitnot</code> (uses <code>{inreg0, outreg}</code>) and <code>add</code> (uses <code>{inreg0, inreg1, outreg}</code>) are both valid; one is chosen at random. If <code>inreg1</code> were also specified, only <code>add</code> would be valid.</p>
+<p><strong>Output dict:</strong> Same structure as pass 1, with three fields added to each instruction record:</p>
+<pre><code class="language-python">{
+&quot;concrete_instruction&quot;: str, # e.g. &quot;load&quot;, &quot;bitnot&quot;, &quot;br_cond&quot;
+&quot;llvm_op&quot;: str, # e.g. &quot;load volatile i64&quot;, &quot;xor i64&quot;
+&quot;candidates&quot;: list, # all valid concrete names for this instruction
+# ...all pass-1 fields preserved unchanged
+}
+</code></pre>
+<p><strong>Key design choices:</strong></p>
+<ul>
+<li>
+<p>The <code>uses</code> set controls which operand slots will actually appear in the final emitted instruction. Slots not in <code>uses</code> are never assigned real values and are marked <code>None</code> in later passes. This prevents wasted register/memory allocations.</p>
+</li>
+<li>
+<p>Randomness is at the instruction level. Re-running the pipeline with a different random seed produces different concrete instruction assignments where there is choice.</p>
+</li>
+</ul>
+<hr />
+<h3 id="213-pass-25-annotate-branch-mispredictions">2.1.3 Pass 2.5 — Annotate branch mispredictions<a class="headerlink" href="#213-pass-25-annotate-branch-mispredictions" title="Permanent link">&para;</a></h3>
+<p>I SIMPLIFIED ONLY WITH THE ONE VERSION</p>
+<p><strong>Function:</strong> <code>pass2_5_specify_branches(pass2_result, branch_mode, out_path, write_out)</code></p>
+<p><strong>Input:</strong> Pass 2 dict.</p>
+<p><strong>What it does:</strong>
+Annotates unresolved branch instructions (<code>resolved=False</code> and <code>kind</code> in <code>{"br_n", "br_x"}</code>) with misprediction metadata. Resolved branches pass through unchanged. All non-branch instructions pass through unchanged.</p>
+<p>Currently only one mode is active (<code>branch_mode="mispredict_not_taken"</code>). A second mode (<code>mispredict_taken</code>) is stubbed and raises <code>NotImplementedError</code>.</p>
+<p><strong>Mode: <code>mispredict_not_taken</code> (default)</strong>
+The branch IS architecturally taken (condition resolves to <code>True</code>), but the branch target buffer (BTB) predicts fall-through (not taken). The CPU therefore speculatively executes the instructions that follow the branch in program order (the fall-through path), then squashes that work when the branch resolves as taken.
+- <code>condition_value = True</code> — the branch condition evaluates to true (branch taken)
+- <code>taken_target = "end_block"</code> — the architectural destination label (a block appended after all instructions)
+- <code>fallthrough_target = "bb_{pc+1}"</code> — the speculative execution path (next sequential instruction's block label); <code>"end_block"</code> if the branch is the last instruction
+- <code>btb_prediction = "fall_through"</code> — what the BTB predicts
+- <code>btb_predicted_pc = pc + 1</code> — <strong>this is the simulator override point</strong>: the PC the BTB thinks comes next. Overwrite this value in the simulator to change the BTB's prediction.</p>
+<p>If pass 2 assigned <code>br_uncond</code> to an unresolved branch (because no operands were specified), it is upgraded to <code>br_cond</code> here — a conditional branch is required to have a resolvable condition for the misprediction scenario to be meaningful.</p>
+<p><strong>Mode: <code>mispredict_taken</code> (future)</strong></p>
+<p>The branch is NOT architecturally taken (<code>condition_value=False</code>), but the BTB predicts taken. At least one <code>noop</code> must be inserted before the architectural fall-through target, creating the speculative execution path. <code>btb_prediction = "taken"</code>. Not yet implemented.</p>
+<p><strong>Output dict:</strong> Same as pass 2, with these additions:</p>
+<p>Top-level:</p>
+<pre><code class="language-python">{
+&quot;branch_mode&quot;: str, # &quot;mispredict_not_taken&quot; | &quot;mispredict_taken&quot;
+&quot;needs_end_block&quot;: bool, # True if any branch targets end_block
+# ...all pass-2 fields preserved
+}
+</code></pre>
+<p>Per unresolved branch instruction:</p>
+<pre><code class="language-python">{
+&quot;branch_annotations&quot;: {
+&quot;mode&quot;: str, # which mode was applied
+&quot;condition_value&quot;: bool, # what the condition resolves to
+&quot;taken_target&quot;: str, # label for the taken edge (e.g. &quot;end_block&quot;)
+&quot;fallthrough_target&quot;: str, # label for the fall-through edge (e.g. &quot;bb_1&quot;)
+&quot;btb_prediction&quot;: str, # &quot;fall_through&quot; | &quot;taken&quot;
+&quot;btb_predicted_pc&quot;: int, # simulator override: PC the BTB predicts as next
+},
+# concrete_instruction may have been upgraded from br_uncond to br_cond
+}
+</code></pre>
+<p><strong>Key design choices:</strong>
+- The <code>btb_predicted_pc</code> field in <code>branch_annotations</code> is the primary hook for the simulator. At simulation time, overwrite this with whatever PC you want the BTB to report — this forces the desired speculation direction without needing to train a predictor.
+- <code>needs_end_block</code> tells the IR emitter to append a bare <code>end_block:</code> label with <code>ret i64 0</code> after all instruction blocks. Branches target this label as their architectural destination.
+- The basic block structure implied by this pass: all instructions before and including the branch are in the entry block; all instructions after it are in a speculative block (<code>bb_{pc+1}</code>); both eventually terminate at <code>end_block</code>.</p>
+<hr />
+<h3 id="214-pass-3-assign-concrete-registers-and-memory">2.1.4 Pass 3 — Assign concrete registers and memory<a class="headerlink" href="#214-pass-3-assign-concrete-registers-and-memory" title="Permanent link">&para;</a></h3>
+<p><strong>Function:</strong> <code>pass3_assign_operands(pass25_result, out_path, write_out)</code></p>
+<p><strong>Input:</strong> Pass 2.5 dict.</p>
+<p><strong>What it does:</strong>
+Fully assigns every active operand slot to a concrete register name or memory byte offset. After this pass, the dict contains all information needed to emit LLVM IR (modulo SSA renaming, which is pass 4).</p>
+<h4 id="register-assignment">Register assignment<a class="headerlink" href="#register-assignment" title="Permanent link">&para;</a></h4>
+<p><strong>Available pool:</strong> x86-64 System V ABI caller-saved registers — the registers a function may freely clobber without saving/restoring:</p>
+<pre><code>rax rcx rdx rsi rdi r8 r9 r10 r11 (9 total)
+</code></pre>
+<p>(Argument registers <code>rdi</code>, <code>rsi</code>, <code>rdx</code>, <code>rcx</code>, <code>r8</code>, <code>r9</code> plus <code>rax</code>, <code>r10</code>, <code>r11</code>.)</p>
+<p><strong>Locked registers (specified, <code>Reg_s$*</code> physical):</strong> Assigned to real physical registers from this list in sorted <code>Reg_s$*</code> order: <code>Reg_s$0 → rax</code>, <code>Reg_s$1 → rcx</code>, etc. These are stored in <code>result["locked_registers"]</code>. In the final LLVM IR, writes to these registers will be forced via inline-asm output constraints (<code>"={rax}"</code> etc.) so that two instructions sharing a <code>Reg_s$*</code> atom in the Alloy model literally alias in the physical register file — required for correct microarchitectural behavior.</p>
+<p><strong>Free pool for unspecified registers:</strong> Size = 9 − (number of locked registers). Drawn from <code>X86_64_CALLER_SAVED[n_locked_regs:]</code> — the real physical x86 register names left over after locked registers claim the front of the list. For example, if one register is locked (<code>rax</code>), the free pool is <code>["rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11"]</code>. This means all registers in the program — both Alloy-specified (locked) and unspecified (free) — come from the same master <code>X86_64_CALLER_SAVED</code> list (<code>["rax", "rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11"]</code>); locked registers take the front N entries, the free pool is the remaining entries. The pool is exactly large enough so that, no matter how many unique register names are used, the LLVM backend can assign each to a distinct physical register without spilling. Unspecified register slots that are in the concrete instruction's <code>uses</code> set are randomly sampled from this pool. Because every assigned register name is a real physical name, pass 5 can force every outreg write into a specific physical register via <code>"={phys},r"</code> inline asm without requiring any LLVM backend reservation pass.</p>
+<p><strong>Unused slots</strong> (not in the concrete instruction's <code>uses</code>): <code>assigned = None</code>. The IR emitter ignores them.</p>
+<h4 id="memory-assignment">Memory assignment<a class="headerlink" href="#memory-assignment" title="Permanent link">&para;</a></h4>
+<p>A single base <code>alloca</code> holds all memory locations as an array of <code>i64</code> values (8 bytes each, sequential offsets: 0, 8, 16, …). All memory accesses in the generated LLVM IR use GEP into this alloca.</p>
+<p><strong>Locked memory (specified, <code>Mem_s$*</code> physical):</strong> Fixed offset in the alloca, in sorted <code>Mem_s$*</code> order: <code>Mem_s$0 → offset 0</code>, <code>Mem_s$1 → offset 8</code>, etc. Two instructions that share a <code>Mem_s$*</code> atom get the same offset — they access the same physical memory location, as required by the Alloy model. Stored in <code>result["memory_offsets"]</code>.</p>
+<p><strong>Unspecified memory</strong> (in a slot the concrete instruction uses): Each gets its own fresh offset, allocated sequentially after the locked slots. No two unspecified slots share an offset.</p>
+<p><strong>Unused memory slots</strong> (not in <code>uses</code>): <code>assigned_offset = None</code>. Ignored by the IR emitter.</p>
+<p><strong>Alloca sizing:</strong> <code>result["alloca_total_bytes"]</code> is computed after processing all instructions. The IR emitter should prepend the alloca declaration (sized to this value) at the start of the function.</p>
+<h4 id="branch-conditions">Branch conditions<a class="headerlink" href="#branch-conditions" title="Permanent link">&para;</a></h4>
+<p>For instructions with <code>branch_annotations</code>, the forced condition constant is propagated into <code>instruction["condition_assigned"]</code> (bool). The IR emitter uses this to initialize the branch's condition register to the right value before the branch.</p>
+<p><strong>Output dict:</strong></p>
+<pre><code class="language-python">{
+&quot;instructions&quot;: [ ... ], # all slot dicts gain &quot;assigned&quot; (reg) or &quot;assigned_offset&quot; (mem)
+&quot;resource_usage&quot;: { ... }, # unchanged from pass 1
+&quot;branch_mode&quot;: str,
+&quot;needs_end_block&quot;: bool,
+&quot;locked_registers&quot;: { # Reg_s$* atom -&gt; physical register name
+&quot;Reg_s$0&quot;: &quot;rax&quot;, ...
+},
+&quot;virtual_reg_pool&quot;: list, # actual physical register names from X86_64_CALLER_SAVED[n_locked:], e.g. [&quot;rcx&quot;, &quot;rdx&quot;, ...]
+&quot;memory_offsets&quot;: { # Mem_s$* atom -&gt; byte offset in alloca
+&quot;Mem_s$0&quot;: 0, ...
+},
+&quot;alloca_total_bytes&quot;: int, # total size of the single base alloca
+&quot;alloca_total_slots&quot;: int, # number of i64 slots in the alloca
+}
+</code></pre>
+<p>Per register slot dict: <code>"assigned": str | None</code></p>
+<p>Per memory slot dict: <code>"assigned_offset": int | None</code></p>
+<p>Per branch instruction with <code>branch_annotations</code>: <code>"condition_assigned": bool</code></p>
+<p><strong>Key design choices:</strong></p>
+<ul>
+<li>The free pool size cap is the critical anti-spill guarantee. Having more assigned register names than available physical registers would force LLVM to spill to the stack, which would corrupt the microarchitectural test by introducing unexpected memory traffic. By capping the free pool to the physical registers not already claimed by locked registers, spillage is structurally impossible. The anti-spill guarantee is unchanged from the previous design; only the mechanism differs — all names are now real physical names rather than synthetic <code>rx*</code> names, so the LLVM register allocator has no ambiguity about which physical register each name maps to.</li>
+<li>THIS IS FUNE BECAUSE CAPPING IN ALLOY ^^ </li>
+<li>
+<p>Unspecified memory slots intentionally never alias (each gets a unique offset). Creating aliasing between unspecified locations would introduce unintended memory dependencies between instructions that the Alloy model didn't assert. Aliasing only occurs where Alloy explicitly required it via shared <code>Mem_s$*</code> atoms.</p>
+</li>
+<li>
+<p>The <code>inaddr</code> slot (the register holding a memory address) is treated purely as a register assignment here. The semantic constraint that the value of the <code>inaddr</code> register must equal the pointer to the corresponding <code>inmem</code>/<code>outmem</code> offset is left for the IR emitter to enforce by generating a GEP instruction.</p>
+</li>
+<li>
+<p><code>volatile</code> is already embedded in the <code>llvm_op</code> strings for memory instructions (<code>"load volatile i64"</code>, <code>"store volatile i64"</code>), preventing the LLVM optimizer from eliminating or reordering them.</p>
+</li>
+</ul>
+<hr />
+<h3 id="215-pass-4-ssa-renaming">2.1.5 Pass 4 — SSA renaming<a class="headerlink" href="#215-pass-4-ssa-renaming" title="Permanent link">&para;</a></h3>
+<p><strong>Function:</strong> <code>pass4_ssa(pass3_result, out_path, write_out)</code></p>
+<p><strong>Input:</strong> Pass 3 dict.</p>
+<p><strong>What it does:</strong></p>
+<p>Converts the register names assigned in pass 3 (which may be written multiple times by different instructions) into proper SSA form, where each value is defined exactly once and every use refers to a specific definition. LLVM IR requires SSA form.</p>
+<p>Since the program is a linear sequence (topologically sorted by <code>spo</code> with no back-edges), SSA construction is purely linear — no phi nodes are needed. Even with branches (from pass 2.5), the basic block structure is:</p>
+<ul>
+<li>
+<p>Entry block → (taken) end_block, or (fall-through) speculative block</p>
+</li>
+<li>
+<p>Speculative block → end_block</p>
+</li>
+<li>
+<p>end_block: <code>ret i64 0</code> (no values consumed)</p>
+</li>
+</ul>
+<p>Because <code>end_block</code> consumes no SSA values, there is no merge point requiring a phi node. SSA renaming proceeds as a single left-to-right scan.</p>
+<p><strong>SSA renaming algorithm:</strong></p>
+<p>Walk instructions in PC order. For each instruction:</p>
+<ol>
+<li>
+<p><strong>Read phase:</strong> For each input slot (<code>inreg0</code>, <code>inreg1</code>, <code>inaddr</code>) that is active (in <code>uses</code> and <code>assigned != None</code>), look up the current SSA name for that register. If the register has never been written yet, create a version-0 name (<code>{reg}_0</code>) and record it in <code>ssa_init</code>.</p>
+</li>
+<li>
+<p><strong>Write phase:</strong> For each output slot (<code>outreg</code>) that is active, create a fresh SSA name (<code>{reg}_{n+1}</code>) and update the current mapping for that register.</p>
+</li>
+</ol>
+<p>Reads are resolved before writes so that an instruction reading and writing the same register (e.g. <code>add rx0, rx0</code>) correctly uses the old value on the input and defines a new value on the output.</p>
+<p><strong>SSA name format:</strong> <code>{reg_name}_{version}</code> — e.g. <code>rax_0</code> (init), <code>rax_1</code>, <code>rx0_1</code>, <code>rx0_2</code>. No <code>%</code> prefix is stored in the dict; the IR emitter prepends <code>%</code> when emitting text.</p>
+<p>Memory slots (<code>inmem</code>, <code>outmem</code>) carry byte offsets, not values. They are not renamed and receive no <code>ssa_name</code>.</p>
+<p><strong><code>ssa_init</code>:</strong> A dict of <code>{ register_name → version-0 SSA name }</code> for every register that was read before its first write. The IR emitter must emit an initialization for each at the start of the function body:</p>
+<ul>
+<li>
+<p><strong>Locked register</strong> (name appears in <code>locked_registers.values()</code>): initialize via inline-asm output constraint, e.g. force <code>rax</code> to hold a specific value.</p>
+</li>
+<li>
+<p><strong>Virtual register</strong> (<code>rx*</code>): emit <code>%{name} = add i64 0, 0</code> as a zero-initialization placeholder.</p>
+</li>
+</ul>
+<p><strong>Branch condition handling:</strong></p>
+<p>For any instruction with <code>condition_assigned</code>, a new field is added:</p>
+<pre><code class="language-python">instruction[&quot;condition_ssa_forced&quot;] = &quot;i1 true&quot; # or &quot;i1 false&quot;
+</code></pre>
+<p>This tells the IR emitter to use this LLVM constant directly as the <code>br i1</code> operand (rather than the register's SSA value), so that:</p>
+<ol>
+<li>
+<p>The condition is architecturally correct (branch is taken when <code>True</code>).</p>
+</li>
+<li>
+<p>The branch cannot be constant-folded away before reaching the microarchitectural simulator.</p>
+</li>
+</ol>
+<p>The <code>inreg0</code> SSA name is still computed for bookkeeping (it tracks which register the Alloy model placed the condition value in), but <code>condition_ssa_forced</code> is what gets emitted.</p>
+<p><strong>Output dict:</strong></p>
+<pre><code class="language-python">{
+&quot;instructions&quot;: [ ... ], # all active register slot dicts gain &quot;ssa_name&quot;: str | None
+&quot;resource_usage&quot;: { ... },
+&quot;branch_mode&quot;: str,
+&quot;needs_end_block&quot;: bool,
+&quot;locked_registers&quot;: { ... }, # unchanged from pass 3
+&quot;virtual_reg_pool&quot;: list,
+&quot;memory_offsets&quot;: { ... },
+&quot;alloca_total_bytes&quot;: int,
+&quot;alloca_total_slots&quot;: int,
+&quot;ssa_init&quot;: { # registers needing initialization before first instruction
+&quot;rax&quot;: &quot;rax_0&quot;,
+&quot;rx3&quot;: &quot;rx3_0&quot;, ...
+}
+}
+</code></pre>
+<p>Per active register slot: <code>"ssa_name": str | None</code> (None if <code>assigned=None</code>)</p>
+<p>Per branch instruction with <code>branch_annotations</code>: <code>"condition_ssa_forced": "i1 true" | "i1 false"</code></p>
+<p><strong>Key design choices:</strong></p>
+<ul>
+<li>
+<p>The reason locked registers need inline-asm at write sites (not just at read sites) is microarchitectural: two Alloy instructions sharing <code>Reg_s$0</code> must literally write to and read from the same physical register file location. SSA correctly models the value-flow chain but does not, on its own, guarantee a specific physical register. The inline-asm <code>"={rax}"</code> constraint forces the LLVM register allocator to place that SSA value in <code>%rax</code>. Read sites do not need constraints because once the SSA value is known to live in <code>%rax</code> (from the write constraint), all uses of that SSA value automatically read from <code>%rax</code>.</p>
+</li>
+<li>
+<p>A reserved register list in the LLVM backend is also needed for locked registers. The inline-asm constraint pins a value to <code>%rax</code> while it is live, but if there is a "dead gap" between when one instruction writes <code>Reg_s$0</code> and the next reads it, the register allocator could legally use <code>%rax</code> for an unrelated temporary. The reserved list prevents this for the entire function.</p>
+</li>
+</ul>
+<hr />
+<h3 id="216-pass-5-emit-llvm-ir">2.1.6 Pass 5 — Emit LLVM IR<a class="headerlink" href="#216-pass-5-emit-llvm-ir" title="Permanent link">&para;</a></h3>
+<p><strong>Function:</strong> <code>pass5_emit_llvm(pass4_result, func_name, out_path, write_out)</code></p>
+<p><strong>Input:</strong> Pass 4 dict.</p>
+<p><strong>Output:</strong> LLVM IR string (and optionally a <code>.ll</code> file). A single function <code>@{func_name}() -&gt; i64</code>.</p>
+<p><strong>What it does:</strong></p>
+<p>Walks the SSA-annotated instruction list and emits valid LLVM IR. The output can be passed directly to <code>clang</code> or <code>llc</code>. Produces one function with an <code>entry:</code> block, optional intermediate basic blocks (<code>bb_{pc}:</code>), and an optional <code>end_block:</code> epilogue.</p>
+<h4 id="entry-block-structure">Entry block structure<a class="headerlink" href="#entry-block-structure" title="Permanent link">&para;</a></h4>
+<pre><code class="language-llvm">define i64 @test() {
+entry:
+; 1. alloca — single [N x i64] array covering all memory slots
+%mem_base = alloca [N x i64], align 8
+; 2. zero-init each memory slot with a volatile store (prevents optimizer elimination)
+%__mg_1 = getelementptr [N x i64], ptr %mem_base, i64 0, i64 0
+store volatile i64 0, ptr %__mg_1, align 8
+...
+; 3. ssa_init — zero-initialize registers read before first write
+;    all registers use inline asm movq to force a specific physical register
+%rax_0 = call i64 asm sideeffect &quot;movq $1, $0&quot;, &quot;={rax},r&quot;(i64 0)
+%rcx_0 = call i64 asm sideeffect &quot;movq $1, $0&quot;, &quot;={rcx},r&quot;(i64 0)
+</code></pre>
+<p>The alloca covers <code>alloca_total_slots</code> i64 slots (= <code>alloca_total_bytes / 8</code>). Each slot is GEP-indexed (0-based). The GEP index for a given load/store comes from <code>inmem.assigned_offset // 8</code> or <code>outmem.assigned_offset // 8</code>.</p>
+<h4 id="per-instruction-emission">Per-instruction emission<a class="headerlink" href="#per-instruction-emission" title="Permanent link">&para;</a></h4>
+<p>For each instruction (in PC order):</p>
+<ul>
+<li>
+<p>If <code>pc</code> is in the set of fallthrough targets from mispredicted branches, emit a block label <code>bb_{pc}:</code> first.</p>
+</li>
+<li>
+<p>Emit a comment <code>; pc={pc} {atom} ({concrete_instruction})</code>.</p>
+</li>
+<li>
+<p>Then emit the concrete IR:</p>
+</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Concrete instruction</th>
+<th>IR emitted</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>load</code></td>
+<td>GEP from <code>inmem.assigned_offset</code>, then <code>load volatile i64, ptr %gep</code></td>
+</tr>
+<tr>
+<td><code>store</code></td>
+<td>GEP from <code>outmem.assigned_offset</code>, then <code>store volatile i64 %inreg0_ssa, ptr %gep</code></td>
+</tr>
+<tr>
+<td><code>bitnot</code></td>
+<td><code>xor i64 %inreg0_ssa, -1</code></td>
+</tr>
+<tr>
+<td><code>add</code></td>
+<td><code>add i64 %inreg0_ssa, %inreg1_ssa</code></td>
+</tr>
+<tr>
+<td><code>br_cond</code> (mispredicted)</td>
+<td><code>br i1 true, label %{taken}, label %{fallthrough}</code> with BTB comment</td>
+</tr>
+<tr>
+<td><code>br_cond</code>/<code>br_uncond</code> (resolved)</td>
+<td>comment only — linear flow continues</td>
+</tr>
+</tbody>
+</table>
+<p><strong>All outreg writes:</strong> For every instruction that writes an output register, the result is first computed into a temporary SSA value, then forced into the physical register via inline asm. This applies unconditionally to all outreg-writing instructions (load, bitnot, add), regardless of whether the register is Alloy-locked or from the free pool:</p>
+<pre><code class="language-llvm">%__xor_1 = xor i64 %rcx_0, -1
+%rax_1 = call i64 asm sideeffect &quot;movq $1, $0&quot;, &quot;={rax},r&quot;(i64 %__xor_1)
+</code></pre>
+<p>The <code>movq $1, $0</code> in AT&amp;T syntax moves the input register (<code>$1</code>) into the output register (<code>$0</code> = the named physical register). The constraint string <code>"={rax},r"</code> declares the output writes to <code>%rax</code> and the input comes from any general register. Because all assigned registers are now real physical names, the <code>"={phys},r"</code> constraint can be applied uniformly without any special-casing.</p>
+<p><strong>Mispredicted branches:</strong> Use <code>condition_ssa_forced</code> (<code>"i1 true"</code> or <code>"i1 false"</code>) directly, not a register value. This ensures the condition is architecturally correct and cannot be constant-folded away before reaching the simulator. A comment records the BTB prediction and the simulator override point:</p>
+<pre><code class="language-llvm">; BTB predicts=fall_through btb_predicted_pc=1
+br i1 true, label %end_block, label %bb_1
+</code></pre>
+<h4 id="epilogue">Epilogue<a class="headerlink" href="#epilogue" title="Permanent link">&para;</a></h4>
+<p>After the last instruction:</p>
+<ul>
+<li>
+<p>If <code>needs_end_block</code> is True (any branch targets <code>end_block</code>): emit <code>br label %end_block</code> if the last instruction was not already a terminator, then emit <code>end_block: ret i64 0</code>.</p>
+</li>
+<li>
+<p>Otherwise: emit <code>ret i64 0</code> directly.</p>
+</li>
+</ul>
+<h4 id="full-example-output">Full example output<a class="headerlink" href="#full-example-output" title="Permanent link">&para;</a></h4>
+<p>Program with one mispredicted branch (Branchx$0) followed by a load (Load$0) where the load output is a locked register:</p>
+<pre><code class="language-llvm">define i64 @test() {
+entry:
+%mem_base = alloca [1 x i64], align 8
+%__mg_1 = getelementptr [1 x i64], ptr %mem_base, i64 0, i64 0
+store volatile i64 0, ptr %__mg_1, align 8
+%rax_0 = call i64 asm sideeffect &quot;movq $1, $0&quot;, &quot;={rax},r&quot;(i64 0)
+; pc=0 Branchx$0 (br_cond)
+; BTB predicts=fall_through btb_predicted_pc=1
+br i1 true, label %end_block, label %bb_1
+bb_1:
+; pc=1 Load$0 (load)
+%__gep_1 = getelementptr [1 x i64], ptr %mem_base, i64 0, i64 0
+%__ld_1 = load volatile i64, ptr %__gep_1, align 8
+%rax_1 = call i64 asm sideeffect &quot;movq $1, $0&quot;, &quot;={rax},r&quot;(i64 %__ld_1)
+br label %end_block
+end_block:
+ret i64 0
+}
+</code></pre>
+<p><strong>Output:</strong> The function returns a string containing the full LLVM IR. If <code>write_out=True</code> and <code>out_path</code> is provided, the IR is also written to that path.</p>
+<p><strong>Key design choices:</strong></p>
+<ul>
+<li>
+<p>GEP (not <code>inttoptr</code> of the <code>inaddr</code> register) is used as the actual pointer for loads and stores. This guarantees valid addresses at runtime regardless of what value the <code>inaddr</code> register was initialized to. The <code>inaddr</code> slot still carries its SSA value for tracking which physical register holds the address conceptually, but the pointer operand in the IR is computed fresh from the alloca.</p>
+</li>
+<li>
+<p>All memory ops are <code>volatile</code> to prevent the LLVM optimizer from removing or reordering them. Without <code>volatile</code>, LLVM may CSE multiple loads from the same address or eliminate dead stores, corrupting the microarchitectural test.</p>
+</li>
+<li>
+<p>Resolved branches are emitted as comments and do not break the basic block. LLVM IR validity is maintained because the linear instruction stream remains in the current block until a real terminator is emitted.</p>
+</li>
+<li>
+<p>All outreg writes use <code>sideeffect</code> inline asm with a specific physical register constraint (<code>"={phys},r"</code>), not just Alloy-locked ones. This ensures every register-writing instruction survives LLVM's SelectionDAG even at O0, where truly dead DAG nodes can be pruned. It also eliminates the need for a reserved-register pass in the LLVM backend, since all registers (locked and free) are forced to their physical name at every write site.</p>
+</li>
+<li>
+<p>The <code>"sideeffect"</code> keyword on all inline asm calls prevents LLVM from treating them as pure computations and removing them if their outputs appear unused.</p>
+</li>
+</ul>
+<hr />
+<h3 id="217-side-output-branch-annotation-file">2.1.7 Side output — Branch annotation file<a class="headerlink" href="#217-side-output-branch-annotation-file" title="Permanent link">&para;</a></h3>
+<p><strong>Function:</strong> <code>emit_branch_annotations(result, out_path, write_out)</code></p>
+<p><strong>Input:</strong> Any pipeline result dict from pass 2.5 or later (the <code>branch_annotations</code> field is preserved through passes 3, 4, and 5).</p>
+<p><strong>Output:</strong> A list of annotation dicts (one per unresolved branch, in PC order), and optionally a JSON file.</p>
+<p><strong>What it does:</strong></p>
+<p>Collects the BTB force annotation for every unresolved branch. This is the second output of the pipeline alongside the LLVM IR — the simulator reads it to know which BTB entries to override before running the test.</p>
+<p>For each instruction that has <code>branch_annotations</code>, records:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>branch_pc</code></td>
+<td>int</td>
+<td>PC index (0-based) of the branch instruction</td>
+</tr>
+<tr>
+<td><code>branch_atom</code></td>
+<td>str</td>
+<td>Alloy atom name, e.g. <code>"Branchx$0"</code></td>
+</tr>
+<tr>
+<td><code>btb_forced_target_pc</code></td>
+<td>int</td>
+<td>The PC index the simulator should force the BTB to predict as the next instruction</td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td>str</td>
+<td>Misprediction mode, e.g. <code>"mispredict_not_taken"</code></td>
+</tr>
+</tbody>
+</table>
+<p>The <code>btb_forced_target_pc</code> is the wrong target — the one the BTB will incorrectly report, causing speculative execution to begin from that PC. The simulator forces a "taken" prediction to this address; because it is the wrong target, this constitutes a misprediction regardless of the branch's actual direction.</p>
+<p>The <code>btb_forced_target_pc</code> is expressed as a PC index into the instruction sequence. The simulator is responsible for resolving this to an actual memory address at load time (e.g. by looking up the address of the instruction at that index in the compiled binary).</p>
+<p><strong>JSON output format:</strong></p>
+<pre><code class="language-json">{
+  &quot;branch_mode&quot;: &quot;mispredict_not_taken&quot;,
+  &quot;annotations&quot;: [
+    {
+      &quot;branch_pc&quot;: 0,
+      &quot;branch_atom&quot;: &quot;Branchx$0&quot;,
+      &quot;btb_forced_target_pc&quot;: 1,
+      &quot;mode&quot;: &quot;mispredict_not_taken&quot;
+    },
+    {
+      &quot;branch_pc&quot;: 1,
+      &quot;branch_atom&quot;: &quot;Branchx$1&quot;,
+      &quot;btb_forced_target_pc&quot;: 2,
+      &quot;mode&quot;: &quot;mispredict_not_taken&quot;
+    }
+  ]
+}
+</code></pre>
+<p><strong>Typical usage (paired with pass 5):</strong></p>
+<pre><code class="language-python">ir = pass5_emit_llvm(r4, func_name=&quot;test&quot;, out_path=&quot;out.ll&quot;, write_out=True)
+emit_branch_annotations(r4, out_path=&quot;out.ann.json&quot;, write_out=True)
+</code></pre>
+<p><strong>Key design choices:</strong></p>
+<ul>
+<li>
+<p><code>emit_branch_annotations</code> is not a pipeline pass — it does not transform the data dict. It is a formatter that can be called on any result ≥ pass 2.5 without modifying pipeline state.</p>
+</li>
+<li>
+<p>The address is expressed as a PC index, not a raw memory address, because actual addresses are not known until link time. The simulator bridges the gap by mapping PC indices to addresses after loading the compiled binary.</p>
+</li>
+<li>
+<p>Only unresolved branches (those with <code>branch_annotations</code>) appear in the output. Resolved branches are correctly predicted by definition and require no BTB override.</p>
+</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.expand", "navigation.top", "toc.integrate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

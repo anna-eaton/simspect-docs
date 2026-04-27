@@ -940,7 +940,7 @@ Assigns a concrete LLVM-level instruction type to each abstract instruction atom
 <p><strong>Input:</strong> Pass 2 dict.</p>
 <p><strong>What it does:</strong>
 Annotates unresolved branch instructions (<code>resolved=False</code> and <code>kind</code> in <code>{"br_n", "br_x"}</code>) with misprediction metadata. Resolved branches pass through unchanged. All non-branch instructions pass through unchanged.</p>
-<p>Only one mode is active: <code>branch_mode="mispredict_not_taken"</code>. A second mode (<code>mispredict_taken</code>) is stubbed and raises <code>NotImplementedError</code>.</p>
+<p>Only one mode is active: <code>branch_mode="mispredict_not_taken"</code>. A second mode (<code>mispredict_taken</code>) is there too.</p>
 <p><strong>Mode: <code>mispredict_not_taken</code> (default)</strong>
 The branch IS architecturally taken (condition resolves to <code>True</code>), but the branch target buffer (BTB) predicts fall-through (not taken). The CPU therefore speculatively executes the instructions that follow the branch in program order (the fall-through path), then squashes that work when the branch resolves as taken.
 - <code>condition_value = True</code> — the branch condition evaluates to true (branch taken)
